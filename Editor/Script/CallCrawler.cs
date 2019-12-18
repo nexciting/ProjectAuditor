@@ -82,7 +82,7 @@ namespace Unity.ProjectAuditor.Editor
                         callerInstance.location = call.location;
 
                         BuildHierarchy(callerInstance, depth);
-                        callee.children.Add(callerInstance); 
+                        callee.AddChild(callerInstance); 
                     }    
                 }  
             }

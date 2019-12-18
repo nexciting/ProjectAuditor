@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Mono.Cecil;
 using Unity.ProjectAuditor.Editor.Utils;
+using UnityEngine;
 
 namespace Unity.ProjectAuditor.Editor
 {
@@ -13,7 +15,8 @@ namespace Unity.ProjectAuditor.Editor
         public string methodName;
         public Location location;
 
-        public List<CallTreeNode> children = new List<CallTreeNode>();
+        [SerializeField]
+        private List<CallTreeNode> children = new List<CallTreeNode>();
 
         public string prettyName
         {
@@ -84,6 +87,11 @@ namespace Unity.ProjectAuditor.Editor
             return children != null && children.Count > 0;
         }
 
+        public bool HasValidChildren()
+        {
+            return children != null;
+        }
+
         public void AddChild(CallTreeNode child)
         {
             children.Add(child);
@@ -92,6 +100,12 @@ namespace Unity.ProjectAuditor.Editor
         public CallTreeNode GetChild(int index = 0)
         {
             return children[index];
+        }
+
+        public IEnumerable<CallTreeNode> GetChildren(bool skipDuplicates)
+        {
+            return skipDuplicates
+                ? children.GroupBy(c => c.name).Select(c => c.First()) : children;
         }
     }
 }

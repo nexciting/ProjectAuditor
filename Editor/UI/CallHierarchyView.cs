@@ -48,13 +48,13 @@ namespace Unity.ProjectAuditor.Editor
 			m_CallTreeDictionary.Add(id, callTree);
 
 			// if the tree is too deep, serialization will exceed the 7 levels limit.
-			if (callTree.children == null)
+			if (!callTree.HasValidChildren())
 			{
 				items.Add(new TreeViewItem {id = id+1, depth = depth+1, displayName = "<Serialization Limit>"});
 			}
 			else
 			{
-				foreach (var parent in callTree.children)
+				foreach (var parent in callTree.GetChildren(true))
 				{
 					BuildNode(items, parent, depth + 1);
 				}
