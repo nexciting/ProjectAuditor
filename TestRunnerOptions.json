@@ -1,0 +1,9 @@
+{
+    "ignoreScriptCompilationErrors":
+    [
+        {
+            "test":"UnityEditor.ProjectAuditor.EditorTests.AssemblyCompilationExceptionTests.ExceptionIsThrownOnCompilationError",
+            "code":"CS0029",
+        }
+    ]
+}

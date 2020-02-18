@@ -30,7 +30,6 @@ class MyClass {
         }
         
         [Test]
-        [ExplicitAttribute]
         public void ExceptionIsThrownOnCompilationError()
         {
             LogAssert.ignoreFailingMessages = true;
@@ -47,9 +46,9 @@ class MyClass {
             {
                 exceptionThrown = true;
             }
-            
+
             Assert.True(exceptionThrown);
-            
+
             LogAssert.Expect(LogType.Error, "Assets/ProjectAuditor-Temp/MyClass.cs(6,1): error CS1519: Invalid token '}' in class, struct, or interface member declaration");
             LogAssert.Expect(LogType.Error, "Failed to compile player scripts");
             LogAssert.ignoreFailingMessages = false;
