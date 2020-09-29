@@ -2,24 +2,16 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Unity.ProjectAuditor.Editor.AssetsAnalyzers;
 using Unity.ProjectAuditor.Editor.Utils;
 using UnityEditor;
-using UnityEngine;
 
 namespace Unity.ProjectAuditor.Editor.Auditors
 {
     public class AssetsAuditor : IAuditor
     {
-        private static readonly ProblemDescriptor s_Descriptor = new ProblemDescriptor
-            (
-            302000,
-            "Resources folder asset",
-            Area.BuildSize,
-            "The Resources folder is a common source of many problems in Unity projects. Improper use of the Resources folder can bloat the size of a project’s build, lead to uncontrollable excessive memory utilization, and significantly increase application startup times.",
-            "Use AssetBundles when possible"
-            );
-
-        private List<ProblemDescriptor> m_ProblemDescriptors = new List<ProblemDescriptor>();
+        private readonly List<IAssetsAnalyzer> m_AssetsAnalyzers = new List<IAssetsAnalyzer>();
+        private readonly List<ProblemDescriptor> m_ProblemDescriptors = new List<ProblemDescriptor>();
 
         public IEnumerable<ProblemDescriptor> GetDescriptors()
         {
@@ -28,11 +20,12 @@ namespace Unity.ProjectAuditor.Editor.Auditors
 
         public void Initialize(ProjectAuditorConfig config)
         {
-            RegisterDescriptor(s_Descriptor);
         }
 
         public void Reload(string path)
         {
+            foreach (var type in AssemblyHelper.GetAllTypesInheritedFromInterface<IAssetsAnalyzer>())
+                AddAnalyzer(Activator.CreateInstance(type) as IAssetsAnalyzer);
         }
 
         public void RegisterDescriptor(ProblemDescriptor descriptor)
@@ -42,31 +35,20 @@ namespace Unity.ProjectAuditor.Editor.Auditors
 
         public void Audit(Action<ProjectIssue> onIssueFound, Action onComplete, IProgressBar progressBar = null)
         {
-            AnalyzeResources(onIssueFound);
+            var allAssetPaths = AssetDatabase.GetAllAssetPaths();
+            var playerAssetPaths = allAssetPaths.Where(path => path.IndexOf("/editor/", StringComparison.OrdinalIgnoreCase) == -1).Where(path => (File.GetAttributes(path) & FileAttributes.Directory) != FileAttributes.Directory).ToArray();
+            foreach (var analyzer in m_AssetsAnalyzers)
+            {
+                analyzer.Analyze(playerAssetPaths, onIssueFound);
+            }
+
             onComplete();
         }
 
-        private static void AnalyzeResources(Action<ProjectIssue> onIssueFound)
+        private void AddAnalyzer(IAssetsAnalyzer analyzer)
         {
-            var allAssetPaths = AssetDatabase.GetAllAssetPaths();
-            var allResources = allAssetPaths.Where(path => path.IndexOf("/resources/", StringComparison.OrdinalIgnoreCase) >= 0);
-            var allPlayerResources = allResources.Where(path => path.IndexOf("/editor/", StringComparison.OrdinalIgnoreCase) == -1);
-
-            foreach (var filename in allPlayerResources)
-            {
-                if ((File.GetAttributes(filename) & FileAttributes.Directory) == FileAttributes.Directory)
-                    continue;
-
-                var location = new Location(filename, LocationType.Asset);
-                onIssueFound(new ProjectIssue
-                    (
-                        s_Descriptor,
-                        location.Path,
-                        IssueCategory.Assets,
-                        location
-                    )
-                );
-            }
+            analyzer.Initialize(this);
+            m_AssetsAnalyzers.Add(analyzer);
         }
     }
 }

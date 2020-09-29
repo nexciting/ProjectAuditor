@@ -141,6 +141,29 @@ namespace Unity.ProjectAuditor.Editor
     }
 }
 
+namespace Unity.ProjectAuditor.Editor.AssetsAnalyzers
+{
+    public interface IAssetsAnalyzer
+    {
+        public abstract void Analyze(string[] playerAssetPaths, System.Action<Unity.ProjectAuditor.Editor.ProjectIssue> onIssueFound);
+        public abstract void Initialize(Unity.ProjectAuditor.Editor.IAuditor auditor);
+    }
+
+    public class ImportersAnalyzer : Unity.ProjectAuditor.Editor.AssetsAnalyzers.IAssetsAnalyzer
+    {
+        public ImportersAnalyzer() {}
+        public virtual void Analyze(string[] playerAssetPaths, System.Action<Unity.ProjectAuditor.Editor.ProjectIssue> onIssueFound);
+        public virtual void Initialize(Unity.ProjectAuditor.Editor.IAuditor auditor);
+    }
+
+    public class ResourcesAnalyzer : Unity.ProjectAuditor.Editor.AssetsAnalyzers.IAssetsAnalyzer
+    {
+        public ResourcesAnalyzer() {}
+        public virtual void Analyze(string[] playerAssetPaths, System.Action<Unity.ProjectAuditor.Editor.ProjectIssue> onIssueFound);
+        public virtual void Initialize(Unity.ProjectAuditor.Editor.IAuditor auditor);
+    }
+}
+
 namespace Unity.ProjectAuditor.Editor.Auditors
 {
     public class AssetsAuditor : Unity.ProjectAuditor.Editor.IAuditor
