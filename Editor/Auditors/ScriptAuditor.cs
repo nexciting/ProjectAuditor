@@ -25,6 +25,16 @@ namespace Unity.ProjectAuditor.Editor.Auditors
 
         private Thread m_AssemblyAnalysisThread;
 
+        private static readonly ProblemDescriptor s_Descriptor = new ProblemDescriptor
+            (
+            400000,
+            "Compiler message",
+            Area.Quality,
+            "",
+            ""
+            );
+
+
         public void Initialize(ProjectAuditorConfig config)
         {
             m_Config = config;
@@ -48,64 +58,87 @@ namespace Unity.ProjectAuditor.Editor.Auditors
             if (m_Config.AnalyzeInBackground && m_AssemblyAnalysisThread != null)
                 m_AssemblyAnalysisThread.Join();
 
-            var compilationHelper = new AssemblyCompilationHelper();
-            var callCrawler = new CallCrawler();
+            var compilationHelper = new AssemblyCompilationHelper
+            {
+                AssemblyCompilationFinished = (s, messages) =>
+                {
+                    foreach (var message in messages)
+                    {
+                        var messageStartIndex = message.message.IndexOf(":");
+                        if (messageStartIndex != -1)
+                        {
+                            var text = message.message.Substring(messageStartIndex + 1);
+                            text = text.Replace(Path.GetDirectoryName(Application.dataPath), String.Empty);
+                            var issue = new ProjectIssue(s_Descriptor, text, IssueCategory.Compiler,
+                                new Location(message.file, message.line))
+                            {
+                                assembly = Path.GetFileNameWithoutExtension(s)
+                            };
+                            onIssueFound(issue);
+                        }
+                    }
+                },
+                CompilationFinished = (compilationPipeline, assemblyInfos) =>
+                {
+                    Profiler.EndSample();
+
+                    var callCrawler = new CallCrawler();
+
+                    var issues = new List<ProjectIssue>();
+                    var localAssemblyInfos = assemblyInfos.Where(info => !info.readOnly).ToArray();
+                    var readOnlyAssemblyInfos = assemblyInfos.Where(info => info.readOnly).ToArray();
+
+                    var assemblyDirectories = new List<string>();
+                    assemblyDirectories.AddRange(AssemblyHelper.GetPrecompiledAssemblyDirectories());
+                    assemblyDirectories.AddRange(AssemblyHelper.GetPrecompiledEngineAssemblyDirectories());
+
+                    var onCallFound = new Action<CallInfo>(pair => { callCrawler.Add(pair); });
+
+                    var onCompleteInternal = new Action<IProgressBar>(bar =>
+                    {
+                        compilationPipeline.Dispose();
+                        callCrawler.BuildCallHierarchies(issues, bar);
+                        onComplete();
+                    });
+
+                    var onIssueFoundInternal = new Action<ProjectIssue>(issue =>
+                    {
+                        issues.Add(issue);
+                        onIssueFound(issue);
+                    });
+
+                    Profiler.BeginSample("ScriptAuditor.Audit.Analysis");
+
+                    // first phase: analyze assemblies generated from editable scripts
+                    AnalyzeAssemblies(localAssemblyInfos, assemblyDirectories, onCallFound, onIssueFoundInternal, null,
+                        progressBar);
+
+                    var enableBackgroundAnalysis = m_Config.AnalyzeInBackground;
+#if !UNITY_2019_3_OR_NEWER
+                    enableBackgroundAnalysis = false;
+#endif
+                    // second phase: analyze all remaining assemblies, in a separate thread if enableBackgroundAnalysis is enabled
+                    if (enableBackgroundAnalysis)
+                    {
+                        m_AssemblyAnalysisThread = new Thread(() =>
+                            AnalyzeAssemblies(readOnlyAssemblyInfos, assemblyDirectories, onCallFound, onIssueFound,
+                                onCompleteInternal));
+                        m_AssemblyAnalysisThread.Name = "Assembly Analysis";
+                        m_AssemblyAnalysisThread.Priority = ThreadPriority.BelowNormal;
+                        m_AssemblyAnalysisThread.Start();
+                    }
+                    else
+                    {
+                        Profiler.BeginSample("ScriptAuditor.Audit.AnalysisReadOnly");
+                        AnalyzeAssemblies(readOnlyAssemblyInfos, assemblyDirectories, onCallFound, onIssueFoundInternal,
+                            onCompleteInternal, progressBar);
+                        Profiler.EndSample();
+                    }
+                }
+            };
 
             Profiler.BeginSample("ScriptAuditor.Audit.Compilation");
-            var assemblyInfos = compilationHelper.Compile(progressBar);
-            Profiler.EndSample();
-
-            var issues = new List<ProjectIssue>();
-            var localAssemblyInfos = assemblyInfos.Where(info => !info.readOnly).ToArray();
-            var readOnlyAssemblyInfos = assemblyInfos.Where(info => info.readOnly).ToArray();
-
-            var assemblyDirectories = new List<string>();
-            assemblyDirectories.AddRange(AssemblyHelper.GetPrecompiledAssemblyDirectories());
-            assemblyDirectories.AddRange(AssemblyHelper.GetPrecompiledEngineAssemblyDirectories());
-
-            var onCallFound = new Action<CallInfo>(pair =>
-            {
-                callCrawler.Add(pair);
-            });
-
-            var onCompleteInternal = new Action<IProgressBar>(bar =>
-            {
-                compilationHelper.Dispose();
-                callCrawler.BuildCallHierarchies(issues, bar);
-                onComplete();
-            });
-
-            var onIssueFoundInternal = new Action<ProjectIssue>(issue =>
-            {
-                issues.Add(issue);
-                onIssueFound(issue);
-            });
-
-            Profiler.BeginSample("ScriptAuditor.Audit.Analysis");
-
-            // first phase: analyze assemblies generated from editable scripts
-            AnalyzeAssemblies(localAssemblyInfos, assemblyDirectories, onCallFound, onIssueFoundInternal, null, progressBar);
-
-            var enableBackgroundAnalysis = m_Config.AnalyzeInBackground;
-#if !UNITY_2019_3_OR_NEWER
-            enableBackgroundAnalysis = false;
-#endif
-            // second phase: analyze all remaining assemblies, in a separate thread if enableBackgroundAnalysis is enabled
-            if (enableBackgroundAnalysis)
-            {
-                m_AssemblyAnalysisThread = new Thread(() =>
-                    AnalyzeAssemblies(readOnlyAssemblyInfos, assemblyDirectories, onCallFound, onIssueFound, onCompleteInternal));
-                m_AssemblyAnalysisThread.Name = "Assembly Analysis";
-                m_AssemblyAnalysisThread.Priority = ThreadPriority.BelowNormal;
-                m_AssemblyAnalysisThread.Start();
-            }
-            else
-            {
-                Profiler.BeginSample("ScriptAuditor.Audit.AnalysisReadOnly");
-                AnalyzeAssemblies(readOnlyAssemblyInfos, assemblyDirectories, onCallFound, onIssueFoundInternal, onCompleteInternal, progressBar);
-                Profiler.EndSample();
-            }
-            Profiler.EndSample();
+            compilationHelper.Compile(progressBar);
         }
 
         private void AnalyzeAssemblies(IEnumerable<AssemblyInfo> assemblyInfos, List<string> assemblyDirectories, Action<CallInfo> onCallFound, Action<ProjectIssue> onIssueFound, Action<IProgressBar> onComplete, IProgressBar progressBar = null)

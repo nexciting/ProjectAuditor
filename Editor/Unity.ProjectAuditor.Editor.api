@@ -5,12 +5,13 @@ namespace Unity.ProjectAuditor.Editor
 {
     public enum Area
     {
-        public const Unity.ProjectAuditor.Editor.Area All = 5;
+        public const Unity.ProjectAuditor.Editor.Area All = 6;
         public const Unity.ProjectAuditor.Editor.Area BuildSize = 3;
         public const Unity.ProjectAuditor.Editor.Area CPU = 0;
         public const Unity.ProjectAuditor.Editor.Area GPU = 1;
         public const Unity.ProjectAuditor.Editor.Area LoadTimes = 4;
         public const Unity.ProjectAuditor.Editor.Area Memory = 2;
+        public const Unity.ProjectAuditor.Editor.Area Quality = 5;
         public int value__;
     }
 
@@ -39,8 +40,9 @@ namespace Unity.ProjectAuditor.Editor
     {
         public const Unity.ProjectAuditor.Editor.IssueCategory Assets = 0;
         public const Unity.ProjectAuditor.Editor.IssueCategory Code = 1;
-        public const Unity.ProjectAuditor.Editor.IssueCategory NumCategories = 3;
-        public const Unity.ProjectAuditor.Editor.IssueCategory ProjectSettings = 2;
+        public const Unity.ProjectAuditor.Editor.IssueCategory Compiler = 2;
+        public const Unity.ProjectAuditor.Editor.IssueCategory NumCategories = 4;
+        public const Unity.ProjectAuditor.Editor.IssueCategory ProjectSettings = 3;
         public int value__;
     }
 

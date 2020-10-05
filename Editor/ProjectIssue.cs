@@ -34,6 +34,8 @@ namespace Unity.ProjectAuditor.Editor
         /// </summary>
         LoadTimes,
 
+        Quality,
+
         /// <summary>
         /// All areas
         /// </summary>
@@ -44,6 +46,7 @@ namespace Unity.ProjectAuditor.Editor
     {
         Assets,
         Code,
+        Compiler,
         ProjectSettings,
         NumCategories
     }

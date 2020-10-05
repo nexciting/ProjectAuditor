@@ -17,6 +17,7 @@ namespace Unity.ProjectAuditor.Editor.UI
         public bool showCritical;
         public bool showInvertedCallTree;
         public bool showFilenameColumn;
+        public bool showAreaColumn;
         public bool showAssemblyColumn;
     }
 
@@ -67,8 +68,12 @@ namespace Unity.ProjectAuditor.Editor.UI
                         }
                         break;
                     case IssueTable.Column.Area:
-                        width = 60;
-                        minWidth = 50;
+                        if (m_Desc.showAreaColumn)
+                        {
+                            width = 60;
+                            minWidth = 50;
+                        }
+
                         break;
                     case IssueTable.Column.Filename:
                         if (m_Desc.showFilenameColumn)
@@ -111,7 +116,9 @@ namespace Unity.ProjectAuditor.Editor.UI
 
         public void OnGUI()
         {
-            var r = EditorGUILayout.GetControlRect(GUILayout.ExpandHeight(true));
+            EditorGUILayout.BeginVertical(GUI.skin.box);
+
+            var r = EditorGUILayout.GetControlRect(GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(true));
 
             Profiler.BeginSample("IssueTable.OnGUI");
             m_Table.OnGUI(r);
@@ -120,7 +127,9 @@ namespace Unity.ProjectAuditor.Editor.UI
             var selectedIssues = selectedItems.Select(i => i.ProjectIssue).ToArray();
             var info = selectedIssues.Length + " / " + m_Table.GetNumMatchingIssues() + " issues";
 
-            EditorGUILayout.LabelField(info, GUILayout.ExpandWidth(true), GUILayout.Width(200));
+            // EditorGUILayout.LabelField(info, GUILayout.ExpandWidth(true), GUILayout.Width(200));
+
+            EditorGUILayout.EndVertical();
         }
 
         private static class Styles

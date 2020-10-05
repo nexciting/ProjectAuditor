@@ -42,6 +42,10 @@ namespace Unity.ProjectAuditor.Editor.UI
             m_IssuesFilter = issuesFilter;
             m_Desc = desc;
             m_NextId = 1;
+
+            // TreeView customization
+            showBorder = true;
+
             multicolumnHeader.sortingChanged += OnSortingChanged;
         }
 

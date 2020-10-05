@@ -48,6 +48,7 @@ namespace Unity.ProjectAuditor.Editor.UI
                 showCritical = false,
                 showInvertedCallTree = false,
                 showFilenameColumn = false,
+                showAreaColumn = true,
                 showAssemblyColumn = false
             },
             new AnalysisViewDescriptor
@@ -60,6 +61,20 @@ namespace Unity.ProjectAuditor.Editor.UI
                 showCritical = true,
                 showInvertedCallTree = true,
                 showFilenameColumn = true,
+                showAreaColumn = true,
+                showAssemblyColumn = true
+            },
+            new AnalysisViewDescriptor
+            {
+                category = IssueCategory.Compiler,
+                name = "Compiler",
+                groupByDescription = true,
+                descriptionWithIcon = false,
+                showAssemblySelection = true,
+                showCritical = true,
+                showInvertedCallTree = false,
+                showFilenameColumn = true,
+                showAreaColumn = false,
                 showAssemblyColumn = true
             },
             new AnalysisViewDescriptor
@@ -72,6 +87,7 @@ namespace Unity.ProjectAuditor.Editor.UI
                 showCritical = false,
                 showInvertedCallTree = false,
                 showFilenameColumn = false,
+                showAreaColumn = true,
                 showAssemblyColumn = false
             }
         };
@@ -211,6 +227,7 @@ namespace Unity.ProjectAuditor.Editor.UI
 
         private void OnGUI()
         {
+            EditorGUILayout.BeginVertical();
             DrawSettings();
             DrawToolbar();
             if (IsAnalysisValid())
@@ -231,6 +248,7 @@ namespace Unity.ProjectAuditor.Editor.UI
             {
                 DrawHelpbox();
             }
+            EditorGUILayout.EndVertical();
         }
 
         private void OnToggleDeveloperMode()
@@ -386,11 +404,14 @@ namespace Unity.ProjectAuditor.Editor.UI
         private void DrawIssues()
         {
             EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.BeginVertical();
+            // EditorGUILayout.BeginVertical();
 
+            // m_ShowActions = BoldFoldout(m_ShowActions, Styles.ActionsFoldout);
+            // if (m_ShowActions)
+            // {
             m_ActiveAnalysisView.OnGUI();
-
-            EditorGUILayout.EndVertical();
+            // }
+            // EditorGUILayout.EndVertical();
 
             EditorGUILayout.BeginVertical(GUILayout.Width(LayoutSize.FoldoutWidth));
 
@@ -867,7 +888,7 @@ namespace Unity.ProjectAuditor.Editor.UI
 
         private void DrawToolbar()
         {
-            EditorGUILayout.BeginHorizontal(GUI.skin.box);
+            EditorGUILayout.BeginHorizontal(GUI.skin.box, GUILayout.Height(LayoutSize.ToolbarHeight));
             {
                 GUI.enabled = (m_AnalysisState == AnalysisState.Valid || m_AnalysisState == AnalysisState.NotStarted);
 
@@ -911,7 +932,7 @@ namespace Unity.ProjectAuditor.Editor.UI
             EditorGUILayout.BeginHorizontal();
 
             var activeModeIndex = GUILayout.Toolbar(m_ActiveModeIndex, m_ModeNames,
-                GUILayout.MaxWidth(LayoutSize.ModeTabWidth), GUILayout.Height(LayoutSize.ToolbarHeight));
+                GUILayout.MaxWidth(LayoutSize.ModeTabWidth), GUILayout.Height(LayoutSize.ModeTabHeight));
 
             EditorGUILayout.EndHorizontal();
 
@@ -988,14 +1009,14 @@ namespace Unity.ProjectAuditor.Editor.UI
         // UI styles and layout
         private static class LayoutSize
         {
-            public static readonly int ToolbarWidth = 600;
             public static readonly int ToolbarHeight = 30;
             public static readonly int FoldoutWidth = 300;
             public static readonly int FoldoutMinHeight = 100;
             public static readonly int FoldoutMaxHeight = 220;
             public static readonly int FilterOptionsLeftLabelWidth = 100;
             public static readonly int FilterOptionsEnumWidth = 50;
-            public static readonly int ModeTabWidth = 300;
+            public static readonly int ModeTabWidth = 400;
+            public static readonly int ModeTabHeight = 30;
         }
 
         private static class Styles
