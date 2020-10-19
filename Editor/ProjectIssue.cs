@@ -46,7 +46,7 @@ namespace Unity.ProjectAuditor.Editor
     {
         Assets,
         Code,
-        Compiler,
+        CompilerMessage,
         ProjectSettings,
         NumCategories
     }

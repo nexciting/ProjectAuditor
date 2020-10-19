@@ -25,15 +25,32 @@ namespace Unity.ProjectAuditor.Editor.Auditors
 
         private Thread m_AssemblyAnalysisThread;
 
-        private static readonly ProblemDescriptor s_Descriptor = new ProblemDescriptor
+        private static readonly ProblemDescriptor s_CompilerInfoDescriptor = new ProblemDescriptor
             (
             400000,
-            "Compiler message",
+            "Compiler info",
             Area.Quality,
             "",
             ""
             );
 
+        private static readonly ProblemDescriptor s_CompilerWarningDescriptor = new ProblemDescriptor
+            (
+            400001,
+            "Compiler warning",
+            Area.Quality,
+            "",
+            ""
+            );
+
+        private static readonly ProblemDescriptor s_CompilerErrorDescriptor = new ProblemDescriptor
+            (
+            400002,
+            "Compiler error",
+            Area.Quality,
+            "",
+            ""
+            );
 
         public void Initialize(ProjectAuditorConfig config)
         {
@@ -67,14 +84,32 @@ namespace Unity.ProjectAuditor.Editor.Auditors
                         var messageStartIndex = message.message.IndexOf(":");
                         if (messageStartIndex != -1)
                         {
-                            var text = message.message.Substring(messageStartIndex + 1);
-                            text = text.Replace(Path.GetDirectoryName(Application.dataPath), String.Empty);
-                            var issue = new ProjectIssue(s_Descriptor, text, IssueCategory.Compiler,
-                                new Location(message.file, message.line))
+                            ProblemDescriptor descriptor = null;
+                            var messageDescription = message.message.Substring(messageStartIndex + 2);
+
+                            if (messageDescription.StartsWith("info "))
                             {
-                                assembly = Path.GetFileNameWithoutExtension(s)
-                            };
-                            onIssueFound(issue);
+                                descriptor = s_CompilerInfoDescriptor;
+                            }
+                            else if (messageDescription.StartsWith("warning "))
+                            {
+                                descriptor = s_CompilerWarningDescriptor;
+                            }
+                            else if (messageDescription.StartsWith("error "))
+                            {
+                                descriptor = s_CompilerErrorDescriptor;
+                            }
+
+                            //if (descriptor != null && !messageDescription.StartsWith("warning CS") && !messageDescription.StartsWith("info CS"))
+                            {
+                                messageDescription = messageDescription.Replace(Path.GetDirectoryName(Application.dataPath), String.Empty);
+                                var issue = new ProjectIssue(descriptor, messageDescription, IssueCategory.CompilerMessage,
+                                    new Location(message.file, message.line))
+                                {
+                                    assembly = Path.GetFileNameWithoutExtension(s)
+                                };
+                                onIssueFound(issue);
+                            }
                         }
                     }
                 },

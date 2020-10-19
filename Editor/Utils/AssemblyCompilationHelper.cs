@@ -17,7 +17,7 @@ namespace Unity.ProjectAuditor.Editor.Utils
         private string m_OutputFolder = String.Empty;
         private bool m_Success = true;
 
-        private List<AssemblyInfo> assemblyInfos = new List<AssemblyInfo>();
+        private List<AssemblyInfo> m_AssemblyInfos = new List<AssemblyInfo>();
         private int m_PendingAssemblies = 0;
 
         private Action<string> m_OnAssemblyCompilationStarted;
@@ -86,12 +86,10 @@ namespace Unity.ProjectAuditor.Editor.Utils
                 assemblyBuilder.additionalReferences = assembly.allReferences;
                 assemblyBuilder.additionalDefines = assembly.defines;
 
-                // assemblyBuilder.compilerOptions.RoslynAnalyzerDllPaths = new[]
-                // {
-                //     "Assets/ErrorProne.NET.Core.dll",
-                //     "Assets/ErrorProne.Net.CoreAnalyzers.dll",
-                //     "Assets/RuntimeContracts.dll"
-                // };
+                assemblyBuilder.compilerOptions.RoslynAnalyzerDllPaths = new[]
+                {
+
+                };
                 bool result = assemblyBuilder.Build();
                 Debug.Log(result);
             }
@@ -112,7 +110,7 @@ namespace Unity.ProjectAuditor.Editor.Utils
                 .Where(a => a.flags != AssemblyFlags.EditorAssembly).Select(assembly => assembly.outputPath);
 #endif
 
-            assemblyInfos = new List<AssemblyInfo>();
+            m_AssemblyInfos = new List<AssemblyInfo>();
             foreach (var compiledAssemblyPath in compiledAssemblyPaths)
             {
                 var assemblyInfo = AssemblyHelper.GetAssemblyInfoFromAssemblyPath(compiledAssemblyPath);
@@ -120,12 +118,12 @@ namespace Unity.ProjectAuditor.Editor.Utils
                 var sourcePaths = assembly.sourceFiles.Select(file => file.Remove(0, assemblyInfo.relativePath.Length + 1));
 
                 assemblyInfo.sourcePaths = sourcePaths.ToArray();
-                assemblyInfos.Add(assemblyInfo);
+                m_AssemblyInfos.Add(assemblyInfo);
             }
 
             if (!async)
             {
-                CompilationFinished(this, assemblyInfos);
+                CompilationFinished(this, m_AssemblyInfos);
             }
         }
 
@@ -149,7 +147,7 @@ namespace Unity.ProjectAuditor.Editor.Utils
             var errors = messages.Where(message => message.type == CompilerMessageType.Error).ToArray();
 
             if (m_PendingAssemblies == 0)
-                CompilationFinished(this, assemblyInfos);
+                CompilationFinished(this, m_AssemblyInfos);
             m_Success = m_Success && messages.Count(message => message.type == CompilerMessageType.Error) == 0;
         }
     }

@@ -66,8 +66,8 @@ namespace Unity.ProjectAuditor.Editor.UI
             },
             new AnalysisViewDescriptor
             {
-                category = IssueCategory.Compiler,
-                name = "Compiler",
+                category = IssueCategory.CompilerMessage,
+                name = "Compiler Messages",
                 groupByDescription = true,
                 descriptionWithIcon = false,
                 showAssemblySelection = true,
@@ -1015,7 +1015,7 @@ namespace Unity.ProjectAuditor.Editor.UI
             public static readonly int FoldoutMaxHeight = 220;
             public static readonly int FilterOptionsLeftLabelWidth = 100;
             public static readonly int FilterOptionsEnumWidth = 50;
-            public static readonly int ModeTabWidth = 400;
+            public static readonly int ModeTabWidth = 600;
             public static readonly int ModeTabHeight = 30;
         }
 
