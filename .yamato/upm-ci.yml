@@ -26,6 +26,9 @@ test_{{ platform.name }}_{{ editor.version }}:
     - npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
     - upm-ci package test --unity-version {{ editor.version }}
   artifacts:
+    dist:
+      paths:
+        - dist/**
     logs:
       paths:
         - "upm-ci~/test-results/**/*"
